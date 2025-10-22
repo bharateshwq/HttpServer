@@ -37,7 +37,7 @@ public class WebRootHandlerTest {
     @Test
     void constructorGoodPath() {
         try {
-            WebRootHandler webRootHandler = new WebRootHandler("/home/bharatesh/Documents/Projects/simplehttpserver/WebRoot/");
+            WebRootHandler webRootHandler = new WebRootHandler("/opt/WebRoot/");
         } catch (WebRootNotFoundException e) {
             fail(e);
         }

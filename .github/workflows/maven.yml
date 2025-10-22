@@ -27,6 +27,9 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
+    - name: Create WebRoot
+      run: sudo mkdir -p /opt/WebRoot
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
     - name: Run Test Cases
