@@ -1,5 +1,7 @@
 package com.bharateshprojects.simplehttpserver.core;
 
+import com.bharateshprojects.simplehttpserver.core.io.WebRootHandler;
+import com.bharateshprojects.simplehttpserver.core.io.WebRootNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,11 +20,13 @@ public class ServerListenerThread extends Thread {
     private String webRoot;
     ServerSocket serverSocket;
 
-    public ServerListenerThread(int port, String webRoot) throws IOException {
+    private WebRootHandler webRootHandler;
+
+    public ServerListenerThread(int port, String webRoot) throws IOException, WebRootNotFoundException {
         this.port = port;
         this.webRoot = webRoot;
-        this.serverSocket = new ServerSocket(this.port);
-    }
+        this.webRootHandler = new WebRootHandler(webRoot);
+        this.serverSocket = new ServerSocket(this.port);    }
 
 
     @Override
@@ -31,8 +35,7 @@ public class ServerListenerThread extends Thread {
             while (serverSocket.isBound() && !serverSocket.isClosed()) {
                 Socket socket = serverSocket.accept();
                 LOGGER.info(" * Connection accepted * {}", socket.getInetAddress());
-                HttpConnectionWorkerThread workerThread = new HttpConnectionWorkerThread(socket);
-                workerThread.start();
+                HttpConnectionWorkerThread workerThread = new HttpConnectionWorkerThread(socket, webRootHandler);                workerThread.start();
             }
 
 

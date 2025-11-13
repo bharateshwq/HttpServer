@@ -14,32 +14,34 @@ public class ConfigurationManager {
     private static ConfigurationManager myConfigurationManager;
     private static Configuration myCurrentConfiguration;
 
+    //    Singleton pattern
     private ConfigurationManager() {
 
     }
 
-    public static ConfigurationManager getInstance(){
-        if(myConfigurationManager==null)
+    // lazy instantiation of the class
+    public static ConfigurationManager getInstance() {
+        if (myConfigurationManager == null)
             myConfigurationManager = new ConfigurationManager();
         return myConfigurationManager;
     }
-    // User to load a config file from the path provided
-    public void loadConfigurationFile(String filePath)
-    {
-        FileReader fileReader =null;
-        try {
-            fileReader =                new FileReader(filePath);
 
-        }catch (FileNotFoundException e){
-throw new HttpConfigurationException(e);
+    // User to load a config file from the path provided
+    public void loadConfigurationFile(String filePath) {
+        FileReader fileReader = null;
+        try {
+            fileReader = new FileReader(filePath);
+
+        } catch (FileNotFoundException e) {
+            throw new HttpConfigurationException(e);
         }
         StringBuffer sb = new StringBuffer();
         int i;
         try {
-            while((i =fileReader.read()) !=-1){
-                sb.append((char)i);
+            while ((i = fileReader.read()) != -1) {
+                sb.append((char) i);
             }
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new HttpConfigurationException(e);
         }
 
@@ -47,21 +49,21 @@ throw new HttpConfigurationException(e);
         try {
             conf = Json.parse(sb.toString());
         } catch (IOException e) {
-            throw new HttpConfigurationException("Error parsing the configuration",e);
+            throw new HttpConfigurationException("Error parsing the configuration", e);
         }
         try {
-            myCurrentConfiguration = Json.fromJson(conf,Configuration.class);
+            myCurrentConfiguration = Json.fromJson(conf, Configuration.class);
         } catch (JsonProcessingException e) {
-            throw new HttpConfigurationException("Error parsing the configuration file internal",e);
+            throw new HttpConfigurationException("Error parsing the configuration file internal", e);
         }
     }
 
     // Returns the current loaded config
-    public Configuration getCurrentConfiguration(){
-    if(myCurrentConfiguration ==null){
-        throw new HttpConfigurationException("No Current Configuration Set.");
-    }
-    return myCurrentConfiguration;
+    public Configuration getCurrentConfiguration() {
+        if (myCurrentConfiguration == null) {
+            throw new HttpConfigurationException("No Current Configuration Set.");
+        }
+        return myCurrentConfiguration;
     }
 
 

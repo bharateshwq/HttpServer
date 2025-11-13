@@ -1,8 +1,12 @@
 package com.bharateshprojects.simplehttpserver.core;
 
+import com.bharateshprojects.http.*;
+import com.bharateshprojects.simplehttpserver.core.io.ReadFileException;
+import com.bharateshprojects.simplehttpserver.core.io.WebRootHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -13,9 +17,12 @@ public class HttpConnectionWorkerThread extends Thread {
     private final static Logger LOGGER = LoggerFactory.getLogger(HttpConnectionWorkerThread.class);
 
     private Socket socket;
+    private WebRootHandler webRootHandler;
+    private HttpParser httpParser = new HttpParser();
 
-    public HttpConnectionWorkerThread(Socket socket) {
+    public HttpConnectionWorkerThread(Socket socket, WebRootHandler webRootHandler) {
         this.socket = socket;
+        this.webRootHandler = webRootHandler;
     }
 
     @Override
@@ -28,23 +35,12 @@ public class HttpConnectionWorkerThread extends Thread {
 
             //TODO we would read
 
-            int _byte;
-            while ((_byte = inputStream.read()) >= 0) {
-                System.out.print((char) _byte);
-//                System.out.println((_byte = inputStream.read()));
+            HttpRequest request = httpParser.parseHttpRequest(inputStream);
+            HttpResponse response = handleRequest(request);
 
-            }
+            outputStream.write(response.getResponseBytes());
 
-            //TODO we would do writing
-            String html = "<html><head><title>Simple JAVA HTTP server</title></head><body>This page was served from the JAVA https server</body></html>";
-            final String CRLF = "\r\n"; //13 10
-            String response =
-                    "HTTP/1.1 200 OK" + CRLF
-                            + "Content-Length: " + html.getBytes(StandardCharsets.UTF_8).length + CRLF
-                            + CRLF
-                            + html
-                            + CRLF + CRLF; //Status line : HTTP_VERSION RESPONSE_CODE RESPONSE_MESSAGE
-            outputStream.write(response.getBytes());
+            LOGGER.info(" * Connection Processing Finished.");
 
 
             LOGGER.info("Connection processing finished");
@@ -76,5 +72,56 @@ public class HttpConnectionWorkerThread extends Thread {
 
             }
         }
+    }
+
+    private HttpResponse handleRequest(HttpRequest request) {
+
+        switch (request.getMethod()) {
+            case GET:
+                LOGGER.info(" * GET Request");
+                return handleGetRequest(request, true);
+            case HEAD:
+                LOGGER.info(" * HEAD Request");
+                return handleGetRequest(request, false);
+            default:
+                return new HttpResponse.Builder()
+                        .httpVersion(request.getBestCompatibleHttpVersion().LITERAL)
+                        .statusCode(HttpStatusCode.SERVER_ERROR_501_NOT_IMPLEMENTED)
+                        .build();
+        }
+
+    }
+
+    private HttpResponse handleGetRequest(HttpRequest request, boolean setMessageBody) {
+        try {
+
+            HttpResponse.Builder builder = new HttpResponse.Builder()
+                    .httpVersion(request.getBestCompatibleHttpVersion().LITERAL)
+                    .statusCode(HttpStatusCode.OK)
+                    .addHeader(HttpHeaderName.CONTENT_TYPE.headerName, webRootHandler.getFileMimeType(request.getRequestTarget()));
+
+            if (setMessageBody) {
+                byte[] messageBody = webRootHandler.getFileByteArrayData(request.getRequestTarget());
+                builder.addHeader(HttpHeaderName.CONTENT_LENGTH.headerName, String.valueOf(messageBody.length))
+                        .messageBody(messageBody);
+            }
+
+            return builder.build();
+
+        } catch (FileNotFoundException e) {
+
+            return new HttpResponse.Builder()
+                    .httpVersion(request.getBestCompatibleHttpVersion().LITERAL)
+                    .statusCode(HttpStatusCode.CLIENT_ERROR_404_NOT_FOUND)
+                    .build();
+
+        } catch (ReadFileException e) {
+
+            return new HttpResponse.Builder()
+                    .httpVersion(request.getBestCompatibleHttpVersion().LITERAL)
+                    .statusCode(HttpStatusCode.SERVER_ERROR_500_INTERNAL_SERVER_ERROR)
+                    .build();
+        }
+
     }
 }

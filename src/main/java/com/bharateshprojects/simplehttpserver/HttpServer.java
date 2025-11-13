@@ -3,6 +3,7 @@ package com.bharateshprojects.simplehttpserver;
 import com.bharateshprojects.simplehttpserver.config.Configuration;
 import com.bharateshprojects.simplehttpserver.config.ConfigurationManager;
 import com.bharateshprojects.simplehttpserver.core.ServerListenerThread;
+import com.bharateshprojects.simplehttpserver.core.io.WebRootNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,6 +30,8 @@ public class HttpServer {
         } catch (IOException e) {
             throw new RuntimeException(e);
             // TODO handle later
+        } catch(WebRootNotFoundException e){
+            LOGGER.error("Webroot folder not found",e);
         }
     }
 }
